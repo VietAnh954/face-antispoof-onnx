@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FaceID & Anti-Spoofing Portal</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Style Sheet -->
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="stars"></div>
+    <div class="glowing-orb-1"></div>
+    <div class="glowing-orb-2"></div>
+
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="logo-area">
+                <div class="logo-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <path d="M9 3H5a2 2 0 0 0-2 2v4m18-4v-2a2 2 0 0 0-2-2h-4m-12 18H5a2 2 0 0 1-2-2v-4m18 4v2a2 2 0 0 1-2 2h-4M12 8v8m-4-4h8" />
+                    </svg>
+                </div>
+                <h2>ANTIGRAVITY <span class="gradient-text">SHIELD</span></h2>
+            </div>
+            
+            <nav class="nav-menu">
+                <button class="nav-item active" data-tab="register">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                        <circle cx="9" cy="7" r="4" />
+                        <line x1="19" y1="8" x2="19" y2="14" />
+                        <line x1="16" y1="11" x2="22" y2="11" />
+                    </svg>
+                    <span>Face Registration</span>
+                </button>
+                <button class="nav-item" data-tab="liveness">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                        <circle cx="12" cy="13" r="4" />
+                    </svg>
+                    <span>Liveness & Recognition</span>
+                </button>
+                <button class="nav-item" data-tab="faceid">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="5" y="2" width="14" height="20" rx="2" ry="2" />
+                        <line x1="12" y1="18" x2="12.01" y2="18" />
+                    </svg>
+                    <span>FaceID Simulator</span>
+                </button>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="status-indicator">
+                    <span class="status-dot online" id="ws-status-dot"></span>
+                    <span id="ws-status-text">Connecting Server...</span>
+                </div>
+                <div class="model-badge">TensorRT INT8 / FP16 Engine</div>
+            </div>
+        </aside>
+
+        <!-- Main Workspace -->
+        <main class="main-content">
+            <!-- Header -->
+            <header class="content-header">
+                <div>
+                    <h1 id="page-title">Register New Face</h1>
+                    <p id="page-subtitle" class="muted-text">Enroll a new face identity by capturing facial embeddings with YuNet + SFace.</p>
+                </div>
+                <div class="system-stats">
+                    <div class="stat-card">
+                        <span class="stat-label">System Latency</span>
+                        <span class="stat-value" id="stat-latency">-- ms</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-label">Model Status</span>
+                        <span class="stat-value text-green">ACTIVE</span>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Tab Contents -->
+            <div class="tab-viewport">
+                
+                <!-- Tab 1: Registration -->
+                <div class="tab-panel active" id="panel-register">
+                    <div class="grid-layout">
+                        <!-- Camera Card -->
+                        <div class="glass-card camera-card">
+                            <div class="card-header">
+                                <h3>Webcam Capture</h3>
+                                <span class="badge" id="enroll-fps">0 FPS</span>
+                            </div>
+                            <div class="camera-wrapper">
+                                <video id="enroll-video" autoplay playsinline muted class="hidden-video"></video>
+                                <canvas id="enroll-canvas"></canvas>
+                                <div class="camera-overlay">
+                                    <div class="face-guide"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Registration Form Card -->
+                        <div class="glass-card form-card">
+                            <h3>Identity Details</h3>
+                            <p class="muted-text mb-4">Please enter the subject's name and position your face in the center of the frame. Ensure good lighting.</p>
+                            
+                            <form id="register-form" onsubmit="return false;">
+                                <div class="form-group">
+                                    <label for="enroll-name">Full Name</label>
+                                    <input type="text" id="enroll-name" placeholder="e.g. Viet Anh" required autocomplete="off">
+                                </div>
+                                <button type="submit" class="btn btn-primary" id="btn-register">
+                                    <span class="btn-text">Capture & Register</span>
+                                    <span class="btn-loader hidden"></span>
+                                </button>
+                            </form>
+
+                            <div class="toast-log" id="register-log">
+                                <!-- Status notifications will be appended here -->
+                            </div>
+
+                            <div class="info-box mt-auto">
+                                <h4>Enrollment Requirements:</h4>
+                                <ul>
+                                    <li>Keep your face centered and look directly at the camera.</li>
+                                    <li>Avoid wearing heavy sunglasses or face masks.</li>
+                                    <li>High similarity thresholds ensure robust recognition.</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab 2: Liveness & Recognition -->
+                <div class="tab-panel" id="panel-liveness">
+                    <div class="grid-layout-liveness">
+                        <!-- Camera Card -->
+                        <div class="glass-card camera-card span-8">
+                            <div class="card-header">
+                                <h3>Real-Time Identification</h3>
+                                <span class="badge badge-pulse" id="liveness-fps">0 FPS</span>
+                            </div>
+                            <div class="camera-wrapper">
+                                <video id="liveness-video" autoplay playsinline muted class="hidden-video"></video>
+                                <canvas id="liveness-canvas"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- Metrics & Log Card -->
+                        <div class="glass-card span-4 flex-column">
+                            <h3>Analytics Dashboard</h3>
+                            <p class="muted-text mb-4">Real-time inference stats of YuNet detector, SFace recognizer, and TensorRT Anti-Spoofing engine.</p>
+                            
+                            <!-- Recognition Output -->
+                            <div class="output-widget mb-4" id="match-widget">
+                                <div class="widget-header">
+                                    <span>Subject Recognized</span>
+                                    <span class="badge" id="recognition-status">Searching...</span>
+                                </div>
+                                <div class="widget-body">
+                                    <h2 id="match-name">--</h2>
+                                    <div class="similarity-bar-container">
+                                        <div class="similarity-bar-label">
+                                            <span>Confidence Score</span>
+                                            <span id="match-similarity">0%</span>
+                                        </div>
+                                        <div class="similarity-track">
+                                            <div class="similarity-fill" id="match-similarity-bar" style="width: 0%"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Liveness Output -->
+                            <div class="output-widget mb-4" id="liveness-widget">
+                                <div class="widget-header">
+                                    <span>Liveness Detection</span>
+                                    <span class="badge" id="liveness-badge">Monitoring</span>
+                                </div>
+                                <div class="widget-body flex-row justify-between align-center">
+                                    <div>
+                                        <h2 id="liveness-result">Awaiting Face</h2>
+                                        <span class="muted-text text-sm">Anti-spoof threshold: 0.50</span>
+                                    </div>
+                                    <div class="liveness-indicator" id="liveness-indicator-light"></div>
+                                </div>
+                            </div>
+
+                            <!-- Live Feed Stats -->
+                            <div class="stats-list">
+                                <div class="stat-item">
+                                    <span>Detector (YuNet)</span>
+                                    <span class="stat-val font-mono" id="stat-det-time">-- ms</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span>Recognizer (SFace)</span>
+                                    <span class="stat-val font-mono" id="stat-rec-time">-- ms</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span>Liveness TRT Engine</span>
+                                    <span class="stat-val font-mono" id="stat-live-time">-- ms</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab 3: FaceID Simulator -->
+                <div class="tab-panel" id="panel-faceid">
+                    <div class="faceid-simulator-container">
+                        <!-- Mock Phone Screen -->
+                        <div class="mock-device">
+                            <div class="device-notch" id="device-notch-island">
+                                <!-- Apple FaceID Biometric SVG Icon -->
+                                <svg class="apple-faceid-svg" id="apple-faceid-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                                    <!-- Smiling Face -->
+                                    <path class="face-eye-l" d="M9 8v3" stroke-linecap="round" />
+                                    <path class="face-eye-r" d="M15 8v3" stroke-linecap="round" />
+                                    <path class="face-nose" d="M12 8v4h-1.5" stroke-linecap="round" stroke-linejoin="round" />
+                                    <path class="face-mouth" d="M9 15.5c1.5 1.5 4.5 1.5 6 0" stroke-linecap="round" />
+                                    
+                                    <!-- Corners -->
+                                    <g class="face-corners">
+                                        <path d="M5 8V5h3" stroke-linecap="round" />
+                                        <path d="M19 8V5h-3" stroke-linecap="round" />
+                                        <path d="M5 16v3h3" stroke-linecap="round" />
+                                        <path d="M19 16v3h-3" stroke-linecap="round" />
+                                    </g>
+                                    
+                                    <!-- Success Ring -->
+                                    <circle class="face-ring" cx="12" cy="12" r="8.5" stroke-linecap="round" />
+                                </svg>
+                            </div>
+                            
+                            <!-- Screen Content -->
+                            <div class="screen-content" id="phone-screen">
+                                <!-- Lock Screen State -->
+                                <div class="screen-state active" id="state-locked">
+                                    <div class="lock-header">
+                                        <div class="lock-icon-wrapper" id="lock-icon-container">
+                                            <!-- Padlock SVG -->
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="lock-icon" id="svg-lock-icon">
+                                                <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                                                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                                            </svg>
+                                        </div>
+                                        <h2 id="lock-time">10:09</h2>
+                                        <p id="lock-date">Thursday, June 18</p>
+                                    </div>
+
+                                    <!-- Hidden Camera for processing -->
+                                    <video id="faceid-video" autoplay playsinline muted class="hidden-video"></video>
+
+                                    <!-- FaceID Scanning Target area -->
+                                    <div class="faceid-scan-container">
+                                        <!-- Visual Ring -->
+                                        <div class="faceid-ring" id="faceid-ring-visual">
+                                            <canvas id="faceid-canvas"></canvas>
+                                            <div class="faceid-corner top-left"></div>
+                                            <div class="faceid-corner top-right"></div>
+                                            <div class="faceid-corner bottom-left"></div>
+                                            <div class="faceid-corner bottom-right"></div>
+                                            <!-- iOS Scanner Bar -->
+                                            <div class="scanner-bar"></div>
+                                        </div>
+                                        <div class="faceid-label" id="faceid-status-text">Tap Screen to Scan</div>
+                                    </div>
+                                    
+                                    <div class="lock-footer">
+                                        <p>Swipe up or tap to open</p>
+                                        <div class="swipe-indicator"></div>
+                                    </div>
+                                </div>
+
+                                <!-- Unlocked Home Screen State -->
+                                <div class="screen-state" id="state-unlocked">
+                                    <div class="unlocked-header">
+                                        <span class="unlocked-time">10:09</span>
+                                        <div class="battery-status">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <rect x="2" y="7" width="16" height="10" rx="2" ry="2" />
+                                                <line x1="22" y1="11" x2="22" y2="13" />
+                                            </svg>
+                                        </div>
+                                    </div>
+
+                                    <div class="home-apps-grid">
+                                        <div class="app-icon flex-column align-center">
+                                            <div class="icon-box icon-purple">
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                    <circle cx="12" cy="12" r="10" />
+                                                    <path d="M8.56 2.75c4.37 6.03 6.02 9.42 8.03 17.72" />
+                                                </svg>
+                                            </div>
+                                            <span>Antigravity</span>
+                                        </div>
+                                        <div class="app-icon flex-column align-center">
+                                            <div class="icon-box icon-blue">
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+                                                </svg>
+                                            </div>
+                                            <span>Models</span>
+                                        </div>
+                                        <div class="app-icon flex-column align-center">
+                                            <div class="icon-box icon-green">
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                    <polygon points="12 2 2 7 12 12 22 7 12 2" />
+                                                    <polyline points="2 17 12 22 22 17" />
+                                                    <polyline points="2 12 12 17 22 12" />
+                                                </svg>
+                                            </div>
+                                            <span>Liveness</span>
+                                        </div>
+                                        <div class="app-icon flex-column align-center" id="btn-lock-device">
+                                            <div class="icon-box icon-red">
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                                                    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                                                </svg>
+                                            </div>
+                                            <span>Lock Device</span>
+                                        </div>
+                                    </div>
+
+                                    <div class="unlocked-widget">
+                                        <h3>System Verified</h3>
+                                        <div class="user-welcome-card">
+                                            <div class="avatar-placeholder" id="user-avatar-initial">U</div>
+                                            <div>
+                                                <h4 id="user-welcome-name">User</h4>
+                                                <p class="muted-text text-sm">Authorized via SFace Embeddings</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="home-indicator"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- FaceID Controls & Guide -->
+                        <div class="glass-card faceid-controls">
+                            <h3>FaceID Simulation Instruction</h3>
+                            <p class="muted-text mb-4">Experience high-speed authentic FaceID simulation featuring secure anti-spoofing protection.</p>
+                            
+                            <div class="sim-steps">
+                                <div class="step-card">
+                                    <div class="step-num">1</div>
+                                    <div>
+                                        <h4>Register Face First</h4>
+                                        <p class="muted-text">Enroll your face in the first tab so the database contains your biometric vector.</p>
+                                    </div>
+                                </div>
+                                <div class="step-card">
+                                    <div class="step-num">2</div>
+                                    <div>
+                                        <h4>Trigger Scan</h4>
+                                        <p class="muted-text">Tap anywhere on the lock screen mock-up to start the scanning cycle.</p>
+                                    </div>
+                                </div>
+                                <div class="step-card">
+                                    <div class="step-num">3</div>
+                                    <div>
+                                        <h4>Zero Trust Spoof Test</h4>
+                                        <p class="muted-text">Try scanning with a paper photo or phone image. The lock will reject the attempt.</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="info-box success mt-auto">
+                                <h4>Security Integrity Check:</h4>
+                                <p class="text-sm">In case of a SPOOF attack, FaceID is locked instantly. Only physical live faces can release the secure hardware token.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- Main Application Code -->
+    <script src="/static/app.js"></script>
+</body>
+</html>
